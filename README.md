@@ -3,6 +3,7 @@
 BM25 and TF-IDF sparse vector generation for hybrid search with Pinecone, Qdrant, and Milvus.
 
 [![npm version](https://img.shields.io/npm/v/sparse-encode.svg)](https://www.npmjs.com/package/sparse-encode)
+[![npm downloads](https://img.shields.io/npm/dt/sparse-encode.svg)](https://www.npmjs.com/package/sparse-encode)
 [![license](https://img.shields.io/npm/l/sparse-encode.svg)](https://github.com/SiluPanda/sparse-encode/blob/master/LICENSE)
 [![node](https://img.shields.io/node/v/sparse-encode.svg)](https://nodejs.org)
 
