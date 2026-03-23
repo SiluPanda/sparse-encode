@@ -87,8 +87,37 @@ export function createTFIDF(options?: TFIDFOptions): TFIDFEncoder {
   }
 
   function encodeQuery(text: string): SparseVector {
-    // For queries, same as encode
-    return encode(text)
+    // Query encoding: IDF-only weighting with deduplicated terms (no TF)
+    if (!fitted) throw new Error('TFIDFEncoder must be fit() before encodeQuery()')
+    const tokens = tokenizeText(text)
+    if (tokens.length === 0) return { indices: [], values: [] }
+
+    // Deduplicate terms — each unique query term gets its IDF score once
+    const seen = new Set<number>()
+    const entries: { idx: number; val: number }[] = []
+    for (const token of tokens) {
+      const id = vocab.getId(token)
+      if (id !== undefined && !seen.has(id)) {
+        seen.add(id)
+        const termDf = df.get(id) ?? 0
+        const idf = Math.log((N + 1) / (termDf + 1)) + 1
+        if (idf > 0) {
+          entries.push({ idx: id, val: idf })
+        }
+      }
+    }
+
+    // L2 normalize
+    const norm = Math.sqrt(entries.reduce((acc, e) => acc + e.val * e.val, 0))
+    if (norm > 0) {
+      for (const e of entries) e.val /= norm
+    }
+
+    entries.sort((a, c) => a.idx - c.idx)
+    return {
+      indices: entries.map(e => e.idx),
+      values: entries.map(e => e.val),
+    }
   }
 
   function serialize(): string {

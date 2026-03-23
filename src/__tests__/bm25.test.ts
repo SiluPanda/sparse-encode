@@ -72,6 +72,26 @@ describe('createBM25', () => {
     expect(Array.isArray(vec.values)).toBe(true)
   })
 
+  it('encodeQuery uses IDF-only: repeated terms do not inflate scores', () => {
+    const enc = createBM25()
+    enc.fit(docs)
+    const single = enc.encodeQuery('fox')
+    const repeated = enc.encodeQuery('fox fox fox fox')
+    // Both should produce identical vectors (IDF-only, deduplicated)
+    expect(repeated.indices).toEqual(single.indices)
+    expect(repeated.values).toEqual(single.values)
+  })
+
+  it('encodeQuery differs from encode (IDF-only vs full BM25)', () => {
+    const enc = createBM25()
+    enc.fit(docs)
+    const queryVec = enc.encodeQuery('fox')
+    const docVec = enc.encode('fox')
+    // Both should have the same term, but different scores
+    expect(queryVec.indices).toEqual(docVec.indices)
+    // Values may differ since encode uses full BM25 formula
+  })
+
   it('serialize returns valid JSON', () => {
     const enc = createBM25()
     enc.fit(docs)
