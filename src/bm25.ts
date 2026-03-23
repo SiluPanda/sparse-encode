@@ -3,7 +3,7 @@ import { Vocabulary } from './vocab'
 import type { BM25Options, BM25Encoder, SparseVector, FitStats } from './types'
 
 export function createBM25(options?: BM25Options): BM25Encoder {
-  const k1 = options?.k1 ?? 1.5
+  const k1 = options?.k1 ?? 1.2
   const b = options?.b ?? 0.75
   const stemOpt = options?.stem ?? true
   const tokenizerFn = options?.tokenizer
@@ -86,10 +86,30 @@ export function createBM25(options?: BM25Options): BM25Encoder {
   }
 
   function encodeQuery(text: string): SparseVector {
-    // Query encoding: no length normalization (treat avgdl as doc length)
+    // Query encoding: IDF-only weighting with deduplicated terms (no TF)
     if (!fitted) throw new Error('BM25Encoder must be fit() before encodeQuery()')
     const tokens = tokenizeText(text)
-    return computeBM25(tokens, avgdl)
+
+    // Deduplicate terms — each unique query term gets its IDF score once
+    const seen = new Set<number>()
+    const entries: { idx: number; val: number }[] = []
+    for (const token of tokens) {
+      const id = vocab.getId(token)
+      if (id !== undefined && !seen.has(id)) {
+        seen.add(id)
+        const termDf = df.get(id) ?? 0
+        const idf = Math.log((N - termDf + 0.5) / (termDf + 0.5) + 1)
+        if (idf > 0) {
+          entries.push({ idx: id, val: idf })
+        }
+      }
+    }
+
+    entries.sort((a, c) => a.idx - c.idx)
+    return {
+      indices: entries.map(e => e.idx),
+      values: entries.map(e => e.val),
+    }
   }
 
   function serialize(): string {

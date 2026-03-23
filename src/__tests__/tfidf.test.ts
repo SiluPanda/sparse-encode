@@ -82,6 +82,16 @@ describe('createTFIDF', () => {
     }
   })
 
+  it('encodeQuery uses IDF-only: repeated terms do not inflate scores', () => {
+    const enc = createTFIDF()
+    enc.fit(docs)
+    const single = enc.encodeQuery('fox')
+    const repeated = enc.encodeQuery('fox fox fox fox')
+    // Both should produce identical vectors (IDF-only, deduplicated)
+    expect(repeated.indices).toEqual(single.indices)
+    expect(repeated.values).toEqual(single.values)
+  })
+
   it('serialize returns valid JSON', () => {
     const enc = createTFIDF()
     enc.fit(docs)
