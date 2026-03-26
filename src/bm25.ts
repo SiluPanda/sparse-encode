@@ -63,7 +63,7 @@ export function createBM25(options?: BM25Options): BM25Encoder {
     for (const [termId, termTf] of tf) {
       const termDf = df.get(termId) ?? 0
       const idf = Math.log((N - termDf + 0.5) / (termDf + 0.5) + 1)
-      const score = idf * (termTf * (k1 + 1)) / (termTf + k1 * (1 - b + b * dl / avgdl))
+      const score = idf * (termTf * (k1 + 1)) / (termTf + k1 * (1 - b + b * dl / (avgdl || 1)))
       if (score > 0) {
         entries.push({ idx: termId, val: score })
       }
