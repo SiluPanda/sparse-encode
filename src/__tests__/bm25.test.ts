@@ -102,6 +102,24 @@ describe('createBM25', () => {
     expect(parsed.vocab).toBeDefined()
   })
 
+  it('does not produce NaN or Infinity when all documents tokenize to empty arrays', () => {
+    const enc = createBM25()
+    // These documents contain only stopwords / numeric tokens that get filtered out
+    enc.fit(['the', 'a an the', 'is are was'])
+    const vec = enc.encode('the')
+    for (const v of vec.values) {
+      expect(Number.isFinite(v)).toBe(true)
+      expect(Number.isNaN(v)).toBe(false)
+    }
+    const queryVec = enc.encodeQuery('the')
+    for (const v of queryVec.values) {
+      expect(Number.isFinite(v)).toBe(true)
+      expect(Number.isNaN(v)).toBe(false)
+    }
+    const stats = enc.getStats()
+    expect(stats.avgdl).toBe(0)
+  })
+
   it('custom k1/b options affect scores', () => {
     const enc1 = createBM25({ k1: 1.0, b: 0.5 })
     const enc2 = createBM25({ k1: 2.0, b: 0.9 })
